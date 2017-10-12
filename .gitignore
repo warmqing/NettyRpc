@@ -31,3 +31,5 @@ logs/
 out/
 target/
 .idea/
+.settings/
+.gitignore
