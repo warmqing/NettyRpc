@@ -3,15 +3,17 @@ An RPC framework based on Netty, ZooKeeper and Spring
 中文详情：[Chinese Details](http://www.cnblogs.com/luxiaoxun/p/5272384.html)
 ### Features:
 * Simple code and framework
-* Non-blocking asynchronous call and Synchronous call support
-* Long lived persistent connection
+* Service registry/discovery support by ZooKeeper
 * High availability, load balance and failover
-* Service Discovery support by ZooKeeper
-
-#### How to use
+* Asynchronous/synchronous call support
+* Different serializer/deserializer support
+* Dead TCP connection detecting with heartbeat
+### Design:
+![design](https://github.com/luxiaoxun/NettyRpc/blob/master/picture/NettyRpc-design.png)
+### How to use (netty-rpc-test)
 1. Define an interface:
 
-		public interface HelloService { 
+	    public interface HelloService { 
 			String hello(String name); 
 			String hello(Person person);
 		}
@@ -20,6 +22,8 @@ An RPC framework based on Netty, ZooKeeper and Spring
 
 		@RpcService(HelloService.class)
 		public class HelloServiceImpl implements HelloService {
+			public HelloServiceImpl(){}
+			
 			@Override
 			public String hello(String name) {
 				return "Hello! " + name;
@@ -33,18 +37,25 @@ An RPC framework based on Netty, ZooKeeper and Spring
 
 3. Run zookeeper
 
+   For example: zookeeper is running on 127.0.0.1:2181
+
 4. Start server:
 
-		RpcBootstrap
+   Start server with spring: RpcBootstrap
+
+   Start server without spring: RpcBootstrapWithoutSpring
 
 5. Use the client:
  
 		ServiceDiscovery serviceDiscovery = new ServiceDiscovery("127.0.0.1:2181");
 		final RpcClient rpcClient = new RpcClient(serviceDiscovery);
+		
 		// Sync call
-		HelloService helloService = rpcClient.create(HelloService.class);
+		HelloService helloService = rpcClient.createService(HelloService.class);
 		String result = helloService.hello("World");
+		
 		// Async call
-		IAsyncObjectProxy client = rpcClient.createAsync(HelloService.class);
+		RpcService client = rpcClient.createAsyncService(HelloService.class);
 		RPCFuture helloFuture = client.call("hello", "World");
-   		String result = (String) helloFuture.get(3000, TimeUnit.MILLISECONDS);
+		String result = (String) helloFuture.get(3000, TimeUnit.MILLISECONDS);
+
